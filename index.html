@@ -6,7 +6,7 @@
     <style>
         :root { --main-red: #e30613; --dark-gray: #333; }
         body { font-family: 'Segoe UI', sans-serif; direction: rtl; background: #f0f0f0; padding: 20px; }
-        .invoice-card { background: white; max-width: 900px; margin: auto; padding: 40px; border: 1px solid #ddd; box-shadow: 0 0 10px rgba(0,0,0,0.1); position: relative; }
+        .invoice-card { background: white; max-width: 900px; margin: auto; padding: 40px; border: 1px solid #ddd; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
         .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid var(--main-red); padding-bottom: 10px; margin-bottom: 30px; }
         .logo-main { font-size: 60px; font-weight: bold; color: var(--main-red); line-height: 0.8; margin: 0; }
         .logo-sub { font-size: 14px; letter-spacing: 2px; color: #555; font-weight: bold; }
@@ -23,9 +23,8 @@
         .btn { padding: 15px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; color: white; flex: 1; font-size: 16px; }
         .btn-save { background: #28a745; }
         .btn-print { background: var(--dark-gray); }
-        .btn-add { background: #007bff; width: auto; padding: 8px 15px; margin-top: 10px; }
+        .btn-add { background: #007bff; width: auto; padding: 8px 15px; margin-bottom: 10px; }
         input { width: 100%; border: none; outline: none; text-align: center; background: transparent; }
-        .disc-cell { display: flex; align-items: center; justify-content: center; gap: 5px; }
         @media print { .no-print { display: none !important; } body { background: white; padding: 0; } .invoice-card { box-shadow: none; border: none; width: 100%; } }
     </style>
 </head>
@@ -38,9 +37,9 @@
     </div>
 
     <table class="info-table">
-        <tr><td>اسم العميل</td><td><input type="text" id="custName" placeholder="أدخل اسم العميل"></td></tr>
-        <tr><td>تاريخ الفاتورة</td><td><input type="text" id="invDate" value="1-1-2026"></td></tr>
-        <tr><td>رقم الفاتورة</td><td><input type="text" id="invNo" placeholder="2529"></td></tr>
+        <tr><td>اسم العميل</td><td><input type="text" id="custName" placeholder="أدخل الاسم"></td></tr>
+        <tr><td>تاريخ الفاتورة</td><td><input type="text" id="invDate"></td></tr>
+        <tr><td>رقم الفاتورة</td><td><input type="text" id="invNo" readonly style="color: #888; font-weight: bold;"></td></tr>
     </table>
 
     <table class="items-table" id="itemsTable">
@@ -61,15 +60,10 @@
                     <select onchange="updateRow(this)" class="code-field">
                         <option value="" data-name="" data-price="0">اختر الكود</option>
                         <option value="GA 16/1003" data-name="ياسمين" data-price="750">GA 16/1003</option>
-                        <option value="GA 16/1059" data-name="مسك طهارة خمرة" data-price="2200">GA 16/1059</option>
-                        <option value="GA 16/1121" data-name="عود بوكيه 21" data-price="1450">GA 16/1121</option>
-                        <option value="FA 16/1014" data-name="اسكيب ح" data-price="1050">FA 16/1014</option>
-                        <option value="HA 16/1101" data-name="اسكلابشر 101" data-price="1350">HA 16/1101</option>
-                        <option value="FA 16/1003" data-name="رومبا" data-price="980">FA 16/1003</option>
                         <option value="HA 16/1016" data-name="سيجار" data-price="1100">HA 16/1016</option>
                     </select>
                 </td>
-                <td><input type="number" class="qty-field" value="0.5" step="0.1" oninput="calculate()"></td>
+                <td><input type="number" class="qty-field" value="0.5" oninput="calculate()"></td>
                 <td><input type="number" class="price-field" readonly></td>
                 <td class="row-total">0.00</td>
                 <td class="no-print"><button onclick="this.closest('tr').remove(); calculate()">❌</button></td>
@@ -81,7 +75,7 @@
     <table class="summary-table">
         <tr><td>اجمالي الكمية بالكيلو</td><td id="totalKg">0.50</td></tr>
         <tr><td>السعر قبل الخصم</td><td id="subTotal">0.00</td></tr>
-        <tr><td>نسبة الخصم</td><td class="disc-cell"><input type="number" id="discP" value="15" oninput="calculate()" style="width: 50px;"> %</td></tr>
+        <tr><td>نسبة الخصم</td><td><input type="number" id="discP" value="15" oninput="calculate()" style="width: 40px;"> %</td></tr>
         <tr><td>قيمة الخصم نقداً</td><td id="discV">0.00</td></tr>
         <tr class="total-row"><td>السعر الإجمالي بعد الخصم</td><td id="finalTotal">0.00</td></tr>
     </table>
@@ -93,6 +87,21 @@
 </div>
 
 <script>
+    // ضعي رابط الـ Web App الخاص بكِ هنا
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby3B_DOhJjTzAakbwEozyyOOs_Uav93QjroOmGvEKrDNM0wf1rYI4RAwBCpWXHKG5YoOQ/exec";
+
+    // جلب آخر رقم فاتورة عند فتح الصفحة
+    window.onload = async function() {
+        document.getElementById('invDate').value = new Date().toLocaleDateString('ar-EG');
+        try {
+            const response = await fetch(SCRIPT_URL);
+            const lastNo = await response.text();
+            document.getElementById('invNo').value = parseInt(lastNo) + 1;
+        } catch (e) {
+            document.getElementById('invNo').value = 2529; 
+        }
+    };
+
     function updateRow(sel) {
         const row = sel.closest('tr');
         const opt = sel.options[sel.selectedIndex];
@@ -100,14 +109,16 @@
         row.querySelector('.price-field').value = opt.dataset.price;
         calculate();
     }
+
     function addRow() {
         const tbody = document.querySelector('#itemsTable tbody');
-        const firstRow = tbody.rows[0].cloneNode(true);
-        firstRow.querySelectorAll('input').forEach(i => i.value = i.className === 'qty-field' ? 0.5 : "");
-        firstRow.querySelector('.row-total').innerText = "0.00";
-        firstRow.querySelector('select').selectedIndex = 0;
-        tbody.appendChild(firstRow);
+        const newRow = tbody.rows[0].cloneNode(true);
+        newRow.querySelectorAll('input').forEach(i => i.value = i.className === 'qty-field' ? 0.5 : "");
+        newRow.querySelector('.row-total').innerText = "0.00";
+        newRow.querySelector('select').selectedIndex = 0;
+        tbody.appendChild(newRow);
     }
+
     function calculate() {
         let tKg = 0, sTotal = 0;
         document.querySelectorAll('#itemsTable tbody tr').forEach(r => {
@@ -140,7 +151,7 @@
             }
         });
 
-        if (items.length === 0) { alert("من فضلك أضف صنفاً واحداً على الأقل!"); return; }
+        if (items.length === 0) { alert("أضف صنفاً واحداً على الأقل"); return; }
 
         const data = {
             invoiceNo: document.getElementById('invNo').value,
@@ -155,27 +166,19 @@
         };
 
         btn.disabled = true; btn.innerText = "⏳ جاري الحفظ...";
-        
         try {
-            const url = "https://script.google.com/macros/s/AKfycbw8sVVSqFIRMHmyT8zKrqmKWCwmNdHU9jjSVdZEPUt9sy2JN-N6_PTbJ2cJKQA0_i-i7w/exec";
-            await fetch(url, { method: "POST", mode: "no-cors", body: JSON.stringify(data) });
+            await fetch(SCRIPT_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(data) });
+            alert("✅ تم الحفظ بنجاح!");
             
-            alert("✅ تم الحفظ بنجاح وتحديث الشيت!");
-            
-            // --- تصفير البيانات بعد الحفظ ---
+            // تحديث رقم الفاتورة ومسح البيانات
+            document.getElementById('invNo').value = parseInt(document.getElementById('invNo').value) + 1;
             document.getElementById('custName').value = "";
-            document.getElementById('invNo').value = "";
             const tbody = document.querySelector('#itemsTable tbody');
-            tbody.innerHTML = tbody.rows[0].outerHTML; 
-            tbody.querySelectorAll('input').forEach(i => i.value = i.className === 'qty-field' ? 0.5 : "");
-            tbody.querySelector('select').selectedIndex = 0;
+            tbody.innerHTML = tbody.rows[0].outerHTML;
             calculate();
-
-        } catch (e) { alert("❌ حدث خطأ!"); }
+        } catch (e) { alert("❌ خطأ في الاتصال"); }
         btn.disabled = false; btn.innerText = "💾 حفظ في جوجل شيت";
     }
-    calculate();
 </script>
 </body>
 </html>
-
