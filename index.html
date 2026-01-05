@@ -10,7 +10,7 @@
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background-color: #f5f5f5; }
         
         .invoice-wrapper { 
-            width: 210mm; /* عرض ورقة A4 */
+            width: 210mm; 
             min-height: 297mm;
             margin: 20px auto; 
             padding: 15mm;
@@ -34,13 +34,13 @@
         .main-table th, .main-table td, .footer-table td { border: 1px solid #000; padding: 10px; text-align: center; font-weight: bold; font-size: 14px; }
         .main-table th { background-color: #d9d9d9; }
         
-        /* توزيع الأعمدة */
         .col-del { width: 35px; border: none !important; }
         .col-1 { width: 30%; } .col-2 { width: 25%; } .col-3 { width: 10%; } .col-4 { width: 20%; } .col-5 { width: 15%; } 
 
         input { width: 95%; border: none; text-align: center; font-weight: bold; font-size: 14px; outline: none; background: transparent; }
+        
+        input[readonly] { color: #555; cursor: not-allowed; }
 
-        /* رسالة جاري الحفظ */
         #loadingOverlay {
             display: none;
             position: fixed;
@@ -71,7 +71,7 @@
 </head>
 <body>
 
-<div id="loadingOverlay">⏳ جاري حفظ الفاتورة... برجاء الانتظار</div>
+<div id="loadingOverlay">⏳ جاري حفظ الفاتورة وإرسالها لبوسطة...</div>
 
 <div class="invoice-wrapper">
     <div class="logo-container">
@@ -103,9 +103,9 @@
             <tr>
                 <td class="col-del"><button class="btn-del" onclick="deleteRow(this)">X</button></td>
                 <td><input type="text" class="p-name" list="productsList" onchange="autoFill(this)"></td>
-                <td><input type="text" class="p-code"></td>
+                <td><input type="text" class="p-code" readonly></td>
                 <td><input type="number" class="p-qty" oninput="calculate()"></td>
-                <td><input type="number" class="p-price" oninput="calculate()"></td>
+                <td><input type="number" class="p-price" readonly></td>
                 <td class="p-total">0.00</td>
             </tr>
         </tbody>
@@ -128,18 +128,30 @@
             <td class="col-del" style="border:none;"></td>
             <td colspan="3" style="border: none;"></td>
             <td class="col-4" style="background:#d9d9d9">نسبة الخصم %</td>
-            <td class="col-5"><input type="number" id="discPercent" value="0" oninput="calculate()"></td>
+            <td class="col-5"><input type="number" id="discPercent" value="0" readonly></td>
         </tr>
         <tr>
             <td class="col-del" style="border:none;"></td>
             <td colspan="3" style="border: none;"></td>
-            <td class="col-4" style="background:#d9d9d9">قيمة الخصم نقداً</td>
+            <td class="col-4" style="background:#d9d9d9">خصم إضافي (نقدي)</td>
+            <td class="col-5"><input type="number" id="extraDiscount" value="0" oninput="calculate()"></td>
+        </tr>
+        <tr>
+            <td class="col-del" style="border:none;"></td>
+            <td colspan="3" style="border: none;"></td>
+            <td class="col-4" style="background:#d9d9d9">إجمالي قيمة الخصم</td>
             <td class="col-5" id="discValue">0.00</td>
         </tr>
         <tr>
             <td class="col-del" style="border:none;"></td>
             <td colspan="3" style="border: none;"></td>
-            <td class="col-4" style="background:#d9d9d9">السعر الإجمالي بعد الخصم</td>
+            <td class="col-4" style="background:#d9d9d9">قيمة الشحن</td>
+            <td class="col-5"><input type="number" id="shippingFees" value="0" oninput="calculate()"></td>
+        </tr>
+        <tr>
+            <td class="col-del" style="border:none;"></td>
+            <td colspan="3" style="border: none;"></td>
+            <td class="col-4" style="background:#d9d9d9">السعر الإجمالي النهائي</td>
             <td class="col-5" id="finalTotal" style="color: red; background: yellow;">0.00</td>
         </tr>
     </table>
@@ -151,7 +163,7 @@
 </div>
 
 <script>
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwWLCtP92E6zf_EwA06o6kYW3wvMTn_MtGX6ktKqYZyzFGMWveRGaPcOr1VCm9KrNd0vg/exec"; 
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzUsV6-Yb2wO-4M2oz9_GLLsnZ8sn3qWdBAUTzrzqEk-IlOpl_x03ojknFxDEAG_PPg0Q/exec"; 
     let allProducts = [];
 
     window.onload = function() {
@@ -171,7 +183,11 @@
     function autoFill(input) {
         const row = input.closest('tr');
         const prod = allProducts.find(p => p.name === input.value);
-        if(prod) { row.querySelector('.p-code').value = prod.code; row.querySelector('.p-price').value = prod.price; calculate(); }
+        if(prod) { 
+            row.querySelector('.p-code').value = prod.code; 
+            row.querySelector('.p-price').value = prod.price; 
+            calculate(); 
+        }
     }
 
     function addRow() {
@@ -180,9 +196,9 @@
         row.innerHTML = `
             <td class="col-del"><button class="btn-del" onclick="deleteRow(this)">X</button></td>
             <td><input type="text" class="p-name" list="productsList" onchange="autoFill(this)"></td>
-            <td><input type="text" class="p-code"></td>
+            <td><input type="text" class="p-code" readonly></td>
             <td><input type="number" class="p-qty" oninput="calculate()"></td>
-            <td><input type="number" class="p-price" oninput="calculate()"></td>
+            <td><input type="number" class="p-price" readonly></td>
             <td class="p-total">0.00</td>`;
     }
 
@@ -197,12 +213,37 @@
             r.querySelector(".p-total").innerText = t.toFixed(2);
             kg += q; sub += t;
         });
-        const dP = parseFloat(document.getElementById("discPercent").value) || 0;
-        const dV = sub * (dP / 100);
+
+        // تطبيق معادلة نسبة الخصم الشرطية
+        let autoDiscPercent = 0;
+        if (sub < 5000) {
+            autoDiscPercent = 15;
+        } else if (sub >= 5000 && sub < 10000) {
+            autoDiscPercent = 16;
+        } else if (sub >= 10000 && sub < 15000) {
+            autoDiscPercent = 17;
+        } else if (sub >= 15000 && sub < 20000) {
+            autoDiscPercent = 18;
+        } else if (sub >= 20000 && sub < 25000) {
+            autoDiscPercent = 19;
+        } else if (sub >= 25000) {
+            autoDiscPercent = 20;
+        }
+
+        document.getElementById("discPercent").value = autoDiscPercent;
+
+        const extraD = parseFloat(document.getElementById("extraDiscount").value) || 0;
+        const ship = parseFloat(document.getElementById("shippingFees").value) || 0;
+        
+        const percentDiscountVal = sub * (autoDiscPercent / 100);
+        const totalDiscount = percentDiscountVal + extraD;
+
         document.getElementById("totalKg").innerText = kg;
         document.getElementById("subTotal").innerText = sub.toFixed(2);
-        document.getElementById("discValue").innerText = dV.toFixed(2);
-        document.getElementById("finalTotal").innerText = (sub - dV).toFixed(2);
+        document.getElementById("discValue").innerText = totalDiscount.toFixed(2);
+        
+        const netTotal = (sub - totalDiscount) + ship;
+        document.getElementById("finalTotal").innerText = netTotal.toFixed(2);
     }
 
     function saveToSheet() {
@@ -218,6 +259,8 @@
             totalKg: document.getElementById("totalKg").innerText,
             subTotal: document.getElementById("subTotal").innerText,
             discPercent: document.getElementById("discPercent").value,
+            extraDiscount: document.getElementById("extraDiscount").value,
+            shippingFees: document.getElementById("shippingFees").value,
             finalTotal: document.getElementById("finalTotal").innerText,
             items: []
         };
@@ -235,17 +278,18 @@
         fetch(WEB_APP_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(data) })
         .then(() => {
             document.getElementById("loadingOverlay").style.display = "none";
-            alert("تم الحفظ بنجاح!");
+            alert("تم الحفظ بنجاح وترحيل البيانات لبوسطة!");
             
-            // إعادة التصفير
             document.getElementById("customerName").value = "";
+            document.getElementById("extraDiscount").value = 0;
+            document.getElementById("shippingFees").value = 0;
             document.querySelector("#itemsTable tbody").innerHTML = `
                 <tr>
                     <td class="col-del"><button class="btn-del" onclick="deleteRow(this)">X</button></td>
                     <td><input type="text" class="p-name" list="productsList" onchange="autoFill(this)"></td>
-                    <td><input type="text" class="p-code"></td>
+                    <td><input type="text" class="p-code" readonly></td>
                     <td><input type="number" class="p-qty" oninput="calculate()"></td>
-                    <td><input type="number" class="p-price" oninput="calculate()"></td>
+                    <td><input type="number" class="p-price" readonly></td>
                     <td class="p-total">0.00</td>
                 </tr>`;
             document.getElementById("discPercent").value = 0;
@@ -254,7 +298,7 @@
         })
         .catch(e => {
             document.getElementById("loadingOverlay").style.display = "none";
-            alert("حدث خطأ");
+            alert("حدث خطأ أثناء الاتصال بالسيرفر");
         });
     }
 </script>
