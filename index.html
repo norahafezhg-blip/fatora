@@ -1,183 +1,261 @@
 <!DOCTYPE html>
-<html lang="ar">
+<html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>نظام فواتير HG - Perfume Concentrate</title>
+    <title>نظام الفواتير الاحترافي - HG</title>
     <style>
-        :root { --main-red: #e30613; --dark-gray: #333; }
-        body { font-family: 'Segoe UI', sans-serif; direction: rtl; background: #f0f0f0; padding: 20px; }
-        .invoice-card { background: white; max-width: 900px; margin: auto; padding: 40px; border: 1px solid #ddd; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid var(--main-red); padding-bottom: 10px; margin-bottom: 30px; }
-        .logo-main { font-size: 60px; font-weight: bold; color: var(--main-red); line-height: 0.8; margin: 0; }
-        .logo-sub { font-size: 14px; letter-spacing: 2px; color: #555; font-weight: bold; }
-        .info-table { width: 45%; margin-right: auto; margin-bottom: 30px; border-collapse: collapse; }
-        .info-table td { border: 1px solid #eee; padding: 8px; font-size: 14px; }
-        .info-table td:first-child { background: #f9f9f9; font-weight: bold; width: 120px; }
-        .items-table { width: 100%; border-collapse: collapse; }
-        .items-table th { background: var(--dark-gray); color: white; padding: 12px; }
-        .items-table td { border: 1px solid #ddd; padding: 10px; text-align: center; }
-        .summary-table { width: 50%; border-collapse: collapse; margin-top: 20px; margin-right: auto; }
-        .summary-table td { border: 1px solid #ddd; padding: 10px; }
-        .total-row { background: var(--main-red); color: white; font-weight: bold; }
-        .btn-group { display: flex; gap: 10px; margin-top: 20px; }
-        .btn { padding: 15px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; color: white; flex: 1; font-size: 16px; }
-        .btn-save { background: #28a745; }
-        .btn-print { background: var(--dark-gray); }
-        .btn-add { background: #007bff; width: auto; padding: 8px 15px; margin-bottom: 10px; }
-        input { width: 100%; border: none; outline: none; text-align: center; background: transparent; }
-        @media print { .no-print { display: none !important; } body { background: white; padding: 0; } .invoice-card { box-shadow: none; border: none; width: 100%; } }
+        /* إعدادات الطباعة والمقاس A4 */
+        @page { size: A4; margin: 10mm; }
+        
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background-color: #f5f5f5; }
+        
+        .invoice-wrapper { 
+            width: 210mm; /* عرض ورقة A4 */
+            min-height: 297mm;
+            margin: 20px auto; 
+            padding: 15mm;
+            background-color: #fff;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            position: relative;
+            box-sizing: border-box;
+        }
+
+        .logo-container { text-align: left; margin-bottom: 10px; }
+        .logo-container img { width: 150px; }
+
+        .header-info-table { margin: 0 auto 15px auto; border-collapse: collapse; width: 450px; }
+        .header-info-table td { border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold; font-size: 16px; }
+        .label-cell { background-color: #d9d9d9; width: 40%; }
+        .input-cell { background-color: #fff; width: 60%; }
+
+        .title-blue { text-align: center; color: #1c4587; font-size: 28px; font-weight: bold; text-decoration: underline; margin-bottom: 20px; }
+
+        .main-table, .footer-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+        .main-table th, .main-table td, .footer-table td { border: 1px solid #000; padding: 10px; text-align: center; font-weight: bold; font-size: 14px; }
+        .main-table th { background-color: #d9d9d9; }
+        
+        /* توزيع الأعمدة */
+        .col-del { width: 35px; border: none !important; }
+        .col-1 { width: 30%; } .col-2 { width: 25%; } .col-3 { width: 10%; } .col-4 { width: 20%; } .col-5 { width: 15%; } 
+
+        input { width: 95%; border: none; text-align: center; font-weight: bold; font-size: 14px; outline: none; background: transparent; }
+
+        /* رسالة جاري الحفظ */
+        #loadingOverlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255,255,255,0.8);
+            z-index: 1000;
+            text-align: center;
+            padding-top: 200px;
+            font-size: 24px;
+            font-weight: bold;
+            color: #1c4587;
+        }
+
+        .btn-del { background: #ff4d4d; color: white; border: none; border-radius: 3px; cursor: pointer; padding: 2px 8px; font-size: 12px; }
+        .no-print { text-align: center; margin: 30px 0; }
+        .btn { padding: 12px 30px; cursor: pointer; border: none; border-radius: 5px; color: #fff; font-weight: bold; margin: 0 10px; font-size: 16px; }
+        
+        .add-row-container { text-align: right; margin: 10px 0; padding-right: 35px; }
+        .btn-add { background-color: #f0f0f0; border: 1px solid #ccc; padding: 6px 15px; cursor: pointer; border-radius: 4px; font-weight: bold; }
+
+        @media print { 
+            body { background-color: #fff; }
+            .invoice-wrapper { margin: 0; border: none; box-shadow: none; width: 100%; }
+            .no-print, .add-row-container, .col-del, .btn-del { display: none !important; } 
+            .main-table td.col-del, .main-table th.col-del { border: none !important; }
+        }
     </style>
 </head>
 <body>
 
-<div class="invoice-card">
-    <div class="header">
-        <div><p class="logo-main">hg</p><p class="logo-sub">PERFUME CONCENTRATE</p></div>
-        <h2 style="color:var(--main-red)">فاتورة الأسعار</h2>
+<div id="loadingOverlay">⏳ جاري حفظ الفاتورة... برجاء الانتظار</div>
+
+<div class="invoice-wrapper">
+    <div class="logo-container">
+        <img src="LOGO (1).png" alt="HG Logo">
     </div>
 
-    <table class="info-table">
-        <tr><td>اسم العميل</td><td><input type="text" id="custName" placeholder="أدخل الاسم"></td></tr>
-        <tr><td>تاريخ الفاتورة</td><td><input type="text" id="invDate"></td></tr>
-        <tr><td>رقم الفاتورة</td><td><input type="text" id="invNo" readonly style="color: #888; font-weight: bold;"></td></tr>
+    <table class="header-info-table">
+        <tr><td class="label-cell">اسم العميل</td><td class="input-cell"><input type="text" id="customerName" placeholder="اسم العميل"></td></tr>
+        <tr><td class="label-cell">تاريخ الفاتورة</td><td class="input-cell"><input type="text" id="invoiceDate"></td></tr>
+        <tr><td class="label-cell">رقم الفاتورة</td><td class="input-cell" style="color: red;"><input type="text" id="invoiceNo" readonly></td></tr>
     </table>
 
-    <table class="items-table" id="itemsTable">
+    <div class="title-blue">فاتورة الأسعار</div>
+
+    <datalist id="productsList"></datalist>
+
+    <table class="main-table" id="itemsTable">
         <thead>
             <tr>
-                <th>اسم الصنف</th>
-                <th>الاسم الكودى</th>
-                <th>الكمية (كجم)</th>
-                <th>سعر الكيلو</th>
-                <th>سعر الكمية</th>
-                <th class="no-print">حذف</th>
+                <th class="col-del"></th>
+                <th class="col-1">اسم الصنف</th>
+                <th class="col-2">الاسم الكودى</th>
+                <th class="col-3">الكمية</th>
+                <th class="col-4">سعر الكيلو</th>
+                <th class="col-5">سعر الكمية</th>
             </tr>
         </thead>
         <tbody>
             <tr>
-                <td><input type="text" class="name-field" readonly></td>
-                <td>
-                    <select onchange="updateRow(this)" class="code-field">
-                        <option value="" data-name="" data-price="0">اختر الكود</option>
-                        <option value="GA 16/1003" data-name="ياسمين" data-price="750">GA 16/1003</option>
-                        <option value="HA 16/1016" data-name="سيجار" data-price="1100">HA 16/1016</option>
-                    </select>
-                </td>
-                <td><input type="number" class="qty-field" value="0.5" oninput="calculate()"></td>
-                <td><input type="number" class="price-field" readonly></td>
-                <td class="row-total">0.00</td>
-                <td class="no-print"><button onclick="this.closest('tr').remove(); calculate()">❌</button></td>
+                <td class="col-del"><button class="btn-del" onclick="deleteRow(this)">X</button></td>
+                <td><input type="text" class="p-name" list="productsList" onchange="autoFill(this)"></td>
+                <td><input type="text" class="p-code"></td>
+                <td><input type="number" class="p-qty" oninput="calculate()"></td>
+                <td><input type="number" class="p-price" oninput="calculate()"></td>
+                <td class="p-total">0.00</td>
             </tr>
         </tbody>
     </table>
-    <button class="btn btn-add no-print" onclick="addRow()">+ صنف آخر</button>
 
-    <table class="summary-table">
-        <tr><td>اجمالي الكمية بالكيلو</td><td id="totalKg">0.50</td></tr>
-        <tr><td>السعر قبل الخصم</td><td id="subTotal">0.00</td></tr>
-        <tr><td>نسبة الخصم</td><td><input type="number" id="discP" value="15" oninput="calculate()" style="width: 40px;"> %</td></tr>
-        <tr><td>قيمة الخصم نقداً</td><td id="discV">0.00</td></tr>
-        <tr class="total-row"><td>السعر الإجمالي بعد الخصم</td><td id="finalTotal">0.00</td></tr>
+    <div class="add-row-container">
+        <button class="btn-add" onclick="addRow()">+ إضافة صنف جديد</button>
+    </div>
+
+    <table class="footer-table" style="margin-top: -1px;">
+        <tr>
+            <td class="col-del" style="border:none;"></td>
+            <td class="col-1" style="border: none;"></td>
+            <td class="col-2" style="background:#d9d9d9">اجمالي الكمية بالكيلو</td>
+            <td class="col-3" id="totalKg">0</td>
+            <td class="col-4" style="background:#d9d9d9">السعر الاجمالي قبل الخصم</td>
+            <td class="col-5" id="subTotal">0.00</td>
+        </tr>
+        <tr>
+            <td class="col-del" style="border:none;"></td>
+            <td colspan="3" style="border: none;"></td>
+            <td class="col-4" style="background:#d9d9d9">نسبة الخصم %</td>
+            <td class="col-5"><input type="number" id="discPercent" value="0" oninput="calculate()"></td>
+        </tr>
+        <tr>
+            <td class="col-del" style="border:none;"></td>
+            <td colspan="3" style="border: none;"></td>
+            <td class="col-4" style="background:#d9d9d9">قيمة الخصم نقداً</td>
+            <td class="col-5" id="discValue">0.00</td>
+        </tr>
+        <tr>
+            <td class="col-del" style="border:none;"></td>
+            <td colspan="3" style="border: none;"></td>
+            <td class="col-4" style="background:#d9d9d9">السعر الإجمالي بعد الخصم</td>
+            <td class="col-5" id="finalTotal" style="color: red; background: yellow;">0.00</td>
+        </tr>
     </table>
 
-    <div class="btn-group no-print">
-        <button class="btn btn-save" id="saveBtn" onclick="saveToSheet()">💾 حفظ في جوجل شيت</button>
-        <button class="btn btn-print" onclick="window.print()">🖨️ طباعة الفاتورة (PDF)</button>
+    <div class="no-print">
+        <button class="btn" style="background: #28a745;" onclick="saveToSheet()">💾 حفظ في الشيت</button>
+        <button class="btn" style="background: #333;" onclick="window.print()">🖨️ طباعة الفاتورة</button>
     </div>
 </div>
 
 <script>
-    // ضعي رابط الـ Web App الخاص بكِ هنا
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby3B_DOhJjTzAakbwEozyyOOs_Uav93QjroOmGvEKrDNM0wf1rYI4RAwBCpWXHKG5YoOQ/exec";
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwqP84wKOI4r-dsmtndr5L5S-ddIXbhDeLmxJEE89qQAlEymdaUjwqI9pm9gVVTa0twxQ/exec"; 
+    let allProducts = [];
 
-    // جلب آخر رقم فاتورة عند فتح الصفحة
-    window.onload = async function() {
-        document.getElementById('invDate').value = new Date().toLocaleDateString('ar-EG');
-        try {
-            const response = await fetch(SCRIPT_URL);
-            const lastNo = await response.text();
-            document.getElementById('invNo').value = parseInt(lastNo) + 1;
-        } catch (e) {
-            document.getElementById('invNo').value = 2529; 
-        }
+    window.onload = function() {
+        document.getElementById('invoiceDate').value = new Date().toLocaleDateString('en-GB');
+        fetch(WEB_APP_URL).then(res => res.text()).then(num => {
+            document.getElementById('invoiceNo').value = isNaN(parseInt(num)) ? 2529 : parseInt(num) + 1;
+        });
+        fetch(WEB_APP_URL + "?action=getPrices").then(res => res.json()).then(data => {
+            allProducts = data;
+            const list = document.getElementById('productsList');
+            data.forEach(item => {
+                let op = document.createElement('option'); op.value = item.name; list.appendChild(op);
+            });
+        });
     };
 
-    function updateRow(sel) {
-        const row = sel.closest('tr');
-        const opt = sel.options[sel.selectedIndex];
-        row.querySelector('.name-field').value = opt.dataset.name;
-        row.querySelector('.price-field').value = opt.dataset.price;
-        calculate();
+    function autoFill(input) {
+        const row = input.closest('tr');
+        const prod = allProducts.find(p => p.name === input.value);
+        if(prod) { row.querySelector('.p-code').value = prod.code; row.querySelector('.p-price').value = prod.price; calculate(); }
     }
 
     function addRow() {
-        const tbody = document.querySelector('#itemsTable tbody');
-        const newRow = tbody.rows[0].cloneNode(true);
-        newRow.querySelectorAll('input').forEach(i => i.value = i.className === 'qty-field' ? 0.5 : "");
-        newRow.querySelector('.row-total').innerText = "0.00";
-        newRow.querySelector('select').selectedIndex = 0;
-        tbody.appendChild(newRow);
+        const table = document.querySelector("#itemsTable tbody");
+        const row = table.insertRow();
+        row.innerHTML = `
+            <td class="col-del"><button class="btn-del" onclick="deleteRow(this)">X</button></td>
+            <td><input type="text" class="p-name" list="productsList" onchange="autoFill(this)"></td>
+            <td><input type="text" class="p-code"></td>
+            <td><input type="number" class="p-qty" oninput="calculate()"></td>
+            <td><input type="number" class="p-price" oninput="calculate()"></td>
+            <td class="p-total">0.00</td>`;
     }
+
+    function deleteRow(btn) { btn.closest('tr').remove(); calculate(); }
 
     function calculate() {
-        let tKg = 0, sTotal = 0;
-        document.querySelectorAll('#itemsTable tbody tr').forEach(r => {
-            const q = parseFloat(r.querySelector('.qty-field').value) || 0;
-            const p = parseFloat(r.querySelector('.price-field').value) || 0;
-            const res = q * p;
-            r.querySelector('.row-total').innerText = res.toFixed(2);
-            tKg += q; sTotal += res;
+        let kg = 0, sub = 0;
+        document.querySelectorAll("#itemsTable tbody tr").forEach(r => {
+            const q = parseFloat(r.querySelector(".p-qty").value) || 0;
+            const p = parseFloat(r.querySelector(".p-price").value) || 0;
+            const t = q * p;
+            r.querySelector(".p-total").innerText = t.toFixed(2);
+            kg += q; sub += t;
         });
-        const dP = parseFloat(document.getElementById('discP').value) || 0;
-        const dV = sTotal * (dP / 100);
-        document.getElementById('totalKg').innerText = tKg.toFixed(2);
-        document.getElementById('subTotal').innerText = sTotal.toFixed(2);
-        document.getElementById('discV').innerText = dV.toFixed(2);
-        document.getElementById('finalTotal').innerText = (sTotal - dV).toFixed(2);
+        const dP = parseFloat(document.getElementById("discPercent").value) || 0;
+        const dV = sub * (dP / 100);
+        document.getElementById("totalKg").innerText = kg;
+        document.getElementById("subTotal").innerText = sub.toFixed(2);
+        document.getElementById("discValue").innerText = dV.toFixed(2);
+        document.getElementById("finalTotal").innerText = (sub - dV).toFixed(2);
     }
 
-    async function saveToSheet() {
-        const btn = document.getElementById('saveBtn');
-        const items = [];
-        document.querySelectorAll('#itemsTable tbody tr').forEach(r => {
-            if(r.querySelector('.code-field').value) {
-                items.push({
-                    name: r.querySelector('.name-field').value,
-                    code: r.querySelector('.code-field').value,
-                    qty: r.querySelector('.qty-field').value,
-                    price: r.querySelector('.price-field').value,
-                    total: r.querySelector('.row-total').innerText
-                });
-            }
-        });
+    function saveToSheet() {
+        const name = document.getElementById("customerName").value;
+        if(!name) { alert("من فضلك أدخل اسم العميل"); return; }
 
-        if (items.length === 0) { alert("أضف صنفاً واحداً على الأقل"); return; }
+        document.getElementById("loadingOverlay").style.display = "block";
 
         const data = {
-            invoiceNo: document.getElementById('invNo').value,
-            invoiceDate: document.getElementById('invDate').value,
-            customer: document.getElementById('custName').value,
-            items: items,
-            totalKg: document.getElementById('totalKg').innerText,
-            subTotal: document.getElementById('subTotal').innerText,
-            discPercent: document.getElementById('discP').value,
-            discVal: document.getElementById('discV').innerText,
-            finalTotal: document.getElementById('finalTotal').innerText
+            customer: name,
+            invoiceDate: document.getElementById("invoiceDate").value,
+            invoiceNo: document.getElementById("invoiceNo").value,
+            totalKg: document.getElementById("totalKg").innerText,
+            subTotal: document.getElementById("subTotal").innerText,
+            discPercent: document.getElementById("discPercent").value,
+            finalTotal: document.getElementById("finalTotal").innerText,
+            items: []
         };
 
-        btn.disabled = true; btn.innerText = "⏳ جاري الحفظ...";
-        try {
-            await fetch(SCRIPT_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(data) });
-            alert("✅ تم الحفظ بنجاح!");
+        document.querySelectorAll("#itemsTable tbody tr").forEach(r => {
+            data.items.push({
+                name: r.querySelector(".p-name").value,
+                code: r.querySelector(".p-code").value,
+                qty: r.querySelector(".p-qty").value,
+                price: r.querySelector(".p-price").value,
+                total: r.querySelector(".p-total").innerText
+            });
+        });
+
+        fetch(WEB_APP_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(data) })
+        .then(() => {
+            document.getElementById("loadingOverlay").style.display = "none";
+            alert("تم الحفظ بنجاح!");
             
-            // تحديث رقم الفاتورة ومسح البيانات
-            document.getElementById('invNo').value = parseInt(document.getElementById('invNo').value) + 1;
-            document.getElementById('custName').value = "";
-            const tbody = document.querySelector('#itemsTable tbody');
-            tbody.innerHTML = tbody.rows[0].outerHTML;
+            // إعادة التصفير
+            document.getElementById("customerName").value = "";
+            document.querySelector("#itemsTable tbody").innerHTML = `
+                <tr>
+                    <td class="col-del"><button class="btn-del" onclick="deleteRow(this)">X</button></td>
+                    <td><input type="text" class="p-name" list="productsList" onchange="autoFill(this)"></td>
+                    <td><input type="text" class="p-code"></td>
+                    <td><input type="number" class="p-qty" oninput="calculate()"></td>
+                    <td><input type="number" class="p-price" oninput="calculate()"></td>
+                    <td class="p-total">0.00</td>
+                </tr>`;
+            document.getElementById("discPercent").value = 0;
             calculate();
-        } catch (e) { alert("❌ خطأ في الاتصال"); }
-        btn.disabled = false; btn.innerText = "💾 حفظ في جوجل شيت";
+            document.getElementById("invoiceNo").value = parseInt(data.invoiceNo) + 1;
+        })
+        .catch(e => {
+            document.getElementById("loadingOverlay").style.display = "none";
+            alert("حدث خطأ");
+        });
     }
 </script>
 </body>
